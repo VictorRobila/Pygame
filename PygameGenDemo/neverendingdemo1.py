@@ -16,6 +16,7 @@ vol_presses = 0
 player_gravity = 0
 front_speed = 0
 back_speed = 0
+checkpoint_room = 0
 
 starting_structure = [[],[],[]]
 for i in range(3):
@@ -56,6 +57,7 @@ def gen_random(structure):
 
 #Colors
 white = (255,255,255)
+light_blue = (173,216,230)
 
 #Font
 crimson = pygame.font.Font('font/CrimsonText-Roman.ttf',48)
@@ -84,6 +86,8 @@ player_rect = player_surf.get_rect(bottomleft=(0,550))
 
 box_surf = pygame.image.load('graphics/enemies/box.jpg')
 box_rect = box_surf.get_rect()
+checkpoint_surf = crimson.render('Checkpoint Room',True,light_blue)
+checkpoint_rect = checkpoint_surf.get_rect(center=(500,100))
 
 
 while True:
@@ -98,9 +102,13 @@ while True:
                 back_speed = 4
             if event.key == pygame.K_d:
                 front_speed = 4
+            if event.key == pygame.K_BACKSLASH:
+                print('Developer settings enabled.')
+                front_speed = 10
         if event.type == pygame.KEYUP:
-            front_speed = 0
-            back_speed = 0
+            if event.key == pygame.K_d or event.key == pygame.K_a or event.key == pygame.K_BACKSLASH:
+                front_speed = 0
+                back_speed = 0
         if event.type == pygame.MOUSEBUTTONDOWN:
             if screen_type == 'main_menu':
                 if play_button_rect.collidepoint(pygame.mouse.get_pos()):
@@ -141,6 +149,9 @@ while True:
 
         #Random Generation
         list_to_img(room_list[screen_type])
+        if screen_type % 5 == 0:
+            screen.blit(checkpoint_surf,checkpoint_rect)
+        checkpoint_room = screen_type
 
         #Physics Engine
         player_gravity += 1
@@ -155,10 +166,12 @@ while True:
         #Exit Detection
         if player_rect.x > 1050:
             if len(room_list) == screen_type+1:
-                room_list.append(gen_random(room_list[screen_type]))
+                if len(room_list) % 5 != 0:
+                    room_list.append(gen_random(room_list[screen_type]))
+                else:
+                    room_list.append(starting_structure)
             screen_type += 1
             player_rect.x = 0
-            print(room_list)
         elif player_rect.x < -50:
             if screen_type == 0:
                 player_rect.x = -25
