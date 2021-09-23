@@ -14,8 +14,8 @@ fps_presses = 0
 volume = 5
 vol_presses = 0
 player_gravity = 0
-front_speed = 0
-back_speed = 0
+player_speed = 0
+#back_speed = 0
 isjump = False
 v=5
 m=1
@@ -55,12 +55,14 @@ def gen_random(structure):
                 new_structure[counter].append(y)
         counter += 1
     return new_structure
+
 def check_if_collision(room_list,player_rect):
     for y in range(len(room_list[-1])):
         for x in range(len(room_list[-1][y])):
             if room_list[-1][y][x]:
                 obstacle=pygame.Rect(x*50+100,y*50+400,50,50)
                 if obstacle.colliderect(player_rect):
+                    print(y,x)
                     return True
     return False
 
@@ -95,6 +97,7 @@ player_rect = player_surf.get_rect(bottomleft=(0,550))
 box_surf = pygame.image.load('graphics/enemies/box.jpg')
 box_rect = box_surf.get_rect()
 
+now_move = False
 
 while True:
 
@@ -118,15 +121,16 @@ while True:
             pygame.quit()
             exit()
         if event.type == pygame.KEYDOWN:
-            if keys_pressed[pygame.K_SPACE]:
-                player_gravity = -20
+            now_move = True
+            if player_rect.y==518 or player_rect.y==469 or player_rect.y==419 or player_rect.y==369:
+                if keys_pressed[pygame.K_SPACE]:
+                    player_gravity = -20
             if keys_pressed[pygame.K_LEFT]:
-                back_speed = 4
+                player_speed = -4
             if keys_pressed[pygame.K_RIGHT]:
-                front_speed = 4
+                player_speed = 4
         if event.type == pygame.KEYUP:
-            front_speed = 0
-            back_speed = 0
+            player_speed = 0
         if event.type == pygame.MOUSEBUTTONDOWN:
             if screen_type == 'main_menu':
                 if play_button_rect.collidepoint(pygame.mouse.get_pos()):
@@ -150,6 +154,7 @@ while True:
                     vol_presses += 1
                 elif back_button_rect.collidepoint(pygame.mouse.get_pos()):
                     screen_type = 'main_menu'
+
     if screen_type == 'main_menu':
         if main_menu_rect.x > -111 and back_counter % 111 == 0:
             main_menu_rect.x -= 1
@@ -169,21 +174,21 @@ while True:
         list_to_img(room_list[screen_type])
 
         #Physics Engine
-        player_next_step = pygame.Rect(player_rect.x+front_speed-back_speed  ,  player_rect.y+player_gravity  ,  player_rect.width  ,  player_rect.height)
+        player_next_step = pygame.Rect(player_rect.x+player_speed,  player_rect.y+player_gravity  ,  player_rect.width ,  player_rect.height)
         collision = check_if_collision(room_list,player_next_step)
         
         #Physics Engine
         if not collision:
             player_gravity += 1
             player_rect.y += player_gravity
-            player_rect.x += front_speed
-            player_rect.x -= back_speed
+            player_rect.x += player_speed
+            #player_rect.x -= back_speed
             screen.blit(player_surf, player_rect)
             if player_rect.bottom >= 550:
                 player_rect.bottom = 550
                 player_gravity = 0
         else:
-            player_gravity = front_speed = back_speed = 0
+            player_gravity = -1
             screen.blit(player_surf, player_rect)
 
         #Exit Detection
@@ -216,6 +221,6 @@ while True:
         fps_rect = fps_surf.get_rect(center=(500,250))
         screen.blit(fps_surf,fps_rect)
         screen.blit(vol_surf,vol_rect)
-
+    print(player_rect.y)
     pygame.display.update()
     clock.tick(fps)
