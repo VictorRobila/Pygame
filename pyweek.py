@@ -87,8 +87,21 @@ def check_if_collision(room_list,player_rect,room_number):
                 if obstacle.colliderect(player_rect):
                     return True
     return False
+def rot_center(image, angle, x, y):
+    
+    rotated_image = pygame.transform.rotate(image, angle)
+    new_rect = rotated_image.get_rect(center = image.get_rect(center = (x, y)).center)
 
+    return rotated_image, new_rect
 
+def handle_bullets(red_bullets):
+    for bullet in red_bullets:
+        angle = bullet[1]
+        bullet[0].x+=int(math.sin(angle)*bullet_velocity)
+        bullet[0].y+=int(math.cos(angle)*bullet_velocity)
+        if bullet[0].x>1000 or bullet[0].x<0 or bullet[0].y>600 or bullet[0].y<0:
+            red_bullets.remove(bullet)
+            
 # Colors
 white = (255,255,255)
 light_blue = (173,216,230)
@@ -97,6 +110,8 @@ light_blue = (173,216,230)
 crimson = pygame.font.Font('font/CrimsonText-Roman.ttf', 48)
 crimson_medium = pygame.font.Font('font/CrimsonText-Roman.ttf', 26)
 
+max_bullets=100
+bullet_velocity=7
 # Surfaces
 room_number1=0
 main_menu = pygame.image.load('graphics/main_bg.jpg')
@@ -134,7 +149,7 @@ box_surf = pygame.image.load('graphics/enemies/box.jpg')
 box_rect = box_surf.get_rect()
 checkpoint_surf = crimson.render('Checkpoint Room',True,light_blue)
 checkpoint_rect = checkpoint_surf.get_rect(center=(500,100))
-
+red_bullets=[]
 now_move = False
 
 while True:
@@ -152,17 +167,19 @@ while True:
     #         v = 5
     #         m = 1
     # print(isjump,player_rect.bottom)
-    gun_rect.x=player_rect.x
-    gun_rect.y=player_rect.y
+    gun_rect.x=player_rect.x+player_rect.width/2
+    gun_rect.y=player_rect.y+player_rect.height/2
     gun_rect.width=30
     gun_rect.height=20
     mouse_x, mouse_y = pygame.mouse.get_pos()
     rel_x, rel_y=mouse_x-gun_rect.x,mouse_y-gun_rect.y
     angle=(180/math.pi)*-math.atan2(rel_y,rel_x)
-    print(angle)
-    gun_surf1=pygame.transform.rotate(gun_surf,int(angle))
-
     
+    
+    
+    z,n=rot_center(gun_surf,angle,player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2)
+
+
     for event in pygame.event.get():
         keys_pressed = pygame.key.get_pressed()
         if event.type == pygame.QUIT:
@@ -190,6 +207,13 @@ while True:
             if keys_pressed[pygame.K_s] and dev_tools:
                 max_room = 25
                 print('All shop upgrades unlocked.')
+
+                
+            if event.key==pygame.K_e and len(red_bullets)<max_bullets:
+                bullet=[pygame.Rect(player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2,10,5), angle]
+                red_bullets.append(bullet)
+                
+    
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT or event.key == pygame.K_RIGHTBRACKET \
                     or event.key == pygame.K_LEFTBRACKET:
@@ -258,14 +282,15 @@ while True:
             player_rect.y += player_gravity
             player_rect.x += player_speed
             screen.blit(player_surf, player_rect)
-            screen.blit(gun_surf1, gun_rect)
+            screen.blit(z,n)
             if player_rect.bottom >= 550:
                 player_rect.bottom = 550
                 player_gravity = 0
         else:
             player_gravity = -1
-            screen.blit(player_surf, player_rect)
-            screen.blit(gun_surf1, gun_rect)
+            screen.blit(player_surf,player_rect)
+            screen.blit(z,n)
+            
         # Exit Detection
         if player_rect.x > 1050:
             if len(room_list) == screen_type + 1:
@@ -284,7 +309,7 @@ while True:
             else:
                 screen_type -= 1
                 player_rect.x = 950
-        print(room_number1)
+        
         screen.blit(back_button_surf, back_button_rect)
     elif screen_type == 'settings':
         if main_menu_rect.x > -111 and back_counter % 111 == 0:
@@ -371,6 +396,10 @@ while True:
                 lv_5_surf = crimson_medium.render('Increase Lives (Claimed)', True, light_blue)
                 lv_5_rect = lv_5_surf.get_rect(center=(500, 200))
                 screen.blit(lv_5_surf, lv_5_rect)
-
+    for bullet in red_bullets:
+        pygame.draw.rect(screen,(255,255,255),bullet[0])
+    if len(red_bullets)!=0:
+        print(red_bullets)
+    handle_bullets(red_bullets)
     pygame.display.update()
     clock.tick(fps)
