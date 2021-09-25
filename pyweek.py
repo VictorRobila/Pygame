@@ -87,6 +87,17 @@ def check_if_collision(room_list,player_rect,room_number):
                 if obstacle.colliderect(player_rect):
                     return True
     return False
+
+
+def check_if_collision_bullet(room_list,room_number,red_bullets):
+    for y in range(len(room_list[room_number])):
+        for x in range(len(room_list[room_number][y])):
+            if room_list[room_number][y][x]:
+                obstacle = pygame.Rect(x*50+100,y*50+400,50,50)
+                for bullet in red_bullets:
+                    if obstacle.colliderect(bullet[0]):
+                         red_bullets.remove(bullet)
+
 def rot_center(image, angle, x, y):
     
     rotated_image = pygame.transform.rotate(image, angle)
@@ -97,12 +108,12 @@ def rot_center(image, angle, x, y):
 def handle_bullets(red_bullets):
     for bullet in red_bullets:
         angle = bullet[1]
-        bullet[0].x+=int(math.sin(angle)*bullet_velocity)
-        bullet[0].y+=int(math.cos(angle)*bullet_velocity)
+        bullet[0].y+=int(math.sin(angle)*bullet_velocity)
+        bullet[0].x+=int(math.cos(angle)*bullet_velocity)
         if bullet[0].x>1000 or bullet[0].x<0 or bullet[0].y>600 or bullet[0].y<0:
             red_bullets.remove(bullet)
-            
-# Colors
+
+        # Colors
 white = (255,255,255)
 light_blue = (173,216,230)
 
@@ -172,8 +183,9 @@ while True:
     gun_rect.width=30
     gun_rect.height=20
     mouse_x, mouse_y = pygame.mouse.get_pos()
-    rel_x, rel_y=mouse_x-gun_rect.x,mouse_y-gun_rect.y
+    rel_x, rel_y=mouse_x-player_rect.x,mouse_y-player_rect.y
     angle=(180/math.pi)*-math.atan2(rel_y,rel_x)
+    angle1=(math.atan2(rel_y,rel_x))
     
     
     
@@ -186,7 +198,7 @@ while True:
             pygame.quit()
             exit()
         if event.type == pygame.KEYDOWN:
-            if keys_pressed[pygame.K_SPACE]:
+            if keys_pressed[pygame.K_UP]:
                 now_move = True
                 if player_rect.y == 518 or player_rect.y == 469 or player_rect.y == 419 or player_rect.y == 369:
                     player_gravity = -20
@@ -210,7 +222,7 @@ while True:
 
                 
             if event.key==pygame.K_e and len(red_bullets)<max_bullets:
-                bullet=[pygame.Rect(player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2,10,5), angle]
+                bullet=[pygame.Rect(player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2,10,5), angle1]
                 red_bullets.append(bullet)
                 
     
@@ -400,6 +412,8 @@ while True:
         pygame.draw.rect(screen,(255,255,255),bullet[0])
     if len(red_bullets)!=0:
         print(red_bullets)
+    check_if_collision_bullet(room_list,room_number1,red_bullets)
+
     handle_bullets(red_bullets)
     pygame.display.update()
     clock.tick(fps)
