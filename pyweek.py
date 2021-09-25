@@ -5,7 +5,7 @@ import math
 
 pygame.init()
 screen = pygame.display.set_mode((1000, 600))
-pygame.display.set_caption('Experimentation')
+pygame.display.set_caption('Neverending')
 clock = pygame.time.Clock()
 start_time = 0
 screen_type = 'main_menu'
@@ -89,10 +89,13 @@ def gen_random(structure):
     return new_structure
 
 
-def display_hp():
+def display_hp(enemies_killed):
     score_surface = crimson_medium.render(f'Health: {hp}',True,white)
     score_rectangle = score_surface.get_rect(topleft=(0,0))
     screen.blit(score_surface,score_rectangle)
+    score1_surface = crimson_medium.render('Enemies Killed:'+str(enemies_killed),True,white)
+    score1_rectangle = score1_surface.get_rect(topleft=(150,0))
+    screen.blit(score1_surface,score1_rectangle)
 
 
 def check_if_collision(room_list, player_rect, room_number):
@@ -104,6 +107,7 @@ def check_if_collision(room_list, player_rect, room_number):
                     return True
     return False
 
+
 def check_if_collision_bullet(room_list,room_number,red_bullets):
     for y in range(len(room_list[room_number])):
         for x in range(len(room_list[room_number][y])):
@@ -112,12 +116,21 @@ def check_if_collision_bullet(room_list,room_number,red_bullets):
                 for bullet in red_bullets:
                     if obstacle.colliderect(bullet[0]):
                          red_bullets.remove(bullet)
+def check_if_collision_bullet_enemy(enemy_rect,red_bullets,spawn_timer):
+    for bullet in red_bullets:
+        if enemy_rect.colliderect(bullet[0]):
+            red_bullets.remove(bullet)
+            spawn_timer=True
+            return True
+
 def rot_center(image, angle, x, y):
-    
+
     rotated_image = pygame.transform.rotate(image, angle)
     new_rect = rotated_image.get_rect(center = image.get_rect(center = (x, y)).center)
 
     return rotated_image, new_rect
+
+
 def handle_bullets(red_bullets):
     for bullet in red_bullets:
         angle = bullet[1]
@@ -125,12 +138,15 @@ def handle_bullets(red_bullets):
         bullet[0].x+=int(math.cos(angle)*bullet_velocity)
         if bullet[0].x>1000 or bullet[0].x<0 or bullet[0].y>600 or bullet[0].y<0:
             red_bullets.remove(bullet)
+
+
 # Enemy
+
 
 def move_towards_player(enemy, player):
     dx, dy = player.x - enemy.x, player.y - enemy.y
     dist = math.hypot(dx, dy)
-    if dist <= 40:
+    if enemy.colliderect(player):
         return True
     dx, dy = dx / dist, dy / dist
     enemy.x += dx * 4
@@ -197,14 +213,15 @@ box_surf = pygame.image.load('graphics/enemies/box.jpg')
 box_rect = box_surf.get_rect()
 checkpoint_surf = crimson.render('Checkpoint Room', True, light_blue)
 checkpoint_rect = checkpoint_surf.get_rect(center=(500, 100))
-red_bullets=[]
+red_bullets = []
 
+pygame.display.set_icon(enemy_surf)
 now_move = False
-spawn_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(spawn_timer,6000)
-room_number1=0
-
+spawn_timer = True
+room_number1 = 0
+enemies_killed=0
 while True:
+    print(spawn_timer)
     # if isjump == False:
     #     if keys_pressed[pygame.K_SPACE] and player_rect.bottom>=550:
     #         isjump=True
@@ -227,9 +244,13 @@ while True:
     rel_x, rel_y=mouse_x-player_rect.x,mouse_y-player_rect.y
     angle=(180/math.pi)*-math.atan2(rel_y,rel_x)
     angle1=(math.atan2(rel_y,rel_x))
-
-
+    print(player_rect.bottom)
     z,n=rot_center(gun_surf,angle,player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2)
+    if spawn_timer==True and type(screen_type) == int:
+        enemy_surf = pygame.image.load('graphics/enemies/plasma_blast.jpg')
+        enemy_center = (randint(0, 1000), -100)
+        enemy_rect = enemy_surf.get_rect(center=enemy_center)
+        spawn_timer=False
     for event in pygame.event.get():
         keys_pressed = pygame.key.get_pressed()
         if event.type == pygame.QUIT:
@@ -238,7 +259,7 @@ while True:
         if event.type == pygame.KEYDOWN:
             if keys_pressed[pygame.K_SPACE]:
                 now_move = True
-                if player_rect.y == 518 or player_rect.y == 469 or player_rect.y == 419 or player_rect.y == 369:
+                if player_rect.bottom == 550 or player_rect.bottom == 501 or player_rect.bottom == 451 or player_rect.bottom == 401:
                     player_gravity = -20
             if keys_pressed[pygame.K_LEFT]:
                 player_speed = -4 - add_speed
@@ -263,10 +284,7 @@ while True:
             if event.key==pygame.K_e and len(red_bullets)<max_bullets:
                 bullet=[pygame.Rect(player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2,10,5), angle1]
                 red_bullets.append(bullet)
-        if event.type == spawn_timer and type(screen_type) == int:
-            enemy_surf = pygame.image.load('graphics/enemies/plasma_blast.jpg')
-            enemy_center = (randint(0, 1000), -100)
-            enemy_rect = enemy_surf.get_rect(center=enemy_center)
+
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT or event.key == pygame.K_RIGHTBRACKET \
                     or event.key == pygame.K_LEFTBRACKET:
@@ -366,6 +384,7 @@ while True:
             screen_type = checkpoint_room
             dead = False
             current_room_number = checkpoint_room
+            room_number1=checkpoint_room
         screen.blit(game_bg, game_bg_rect)
         screen.blit(ground_bg, ground_bg_rect)
 
@@ -421,6 +440,11 @@ while True:
         invincibility -= 1
         if move_towards_player(enemy_rect, player_rect) and invincibility <= 0:
             hp -= 10
+            spawn_timer=True
+        if check_if_collision_bullet_enemy(enemy_rect,red_bullets,spawn_timer):
+            spawn_timer=True
+            enemies_killed+=1
+            
         screen.blit(enemy_surf, enemy_rect)
         if hp <= 0:
             dead = True
@@ -428,7 +452,7 @@ while True:
             hp = max_hp
             invincibility = 120
 
-        display_hp()
+        display_hp(enemies_killed)
 
     elif screen_type == 'settings':
         if main_menu_rect.x > -111 and back_counter % 111 == 0:
@@ -537,8 +561,6 @@ while True:
             screen.blit(lv_5_surf, lv_5_rect)
     for bullet in red_bullets:
         pygame.draw.rect(screen,(255,255,255),bullet[0])
-    if len(red_bullets)!=0:
-        print(red_bullets)
     check_if_collision_bullet(room_list,room_number1,red_bullets)
 
     handle_bullets(red_bullets)
