@@ -282,7 +282,7 @@ while True:
             main_menu_rect.x += 1
             back_counter += 1
         screen.blit(main_menu, main_menu_rect)
-        screen.blit(shop_title_text,shop_title_text_rect)
+        screen.blit(shop_title_text, shop_title_text_rect)
         screen.blit(back_button_surf, back_button_rect)
 
         if max_room >= 25:
