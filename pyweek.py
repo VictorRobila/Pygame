@@ -26,8 +26,8 @@ dead = False
 bg_music = pygame.mixer.Sound('audio/Voyage.ogg')
 
 # Lives System
-hp = 300
-max_hp = 300
+hp = 30
+max_hp = 30
 invincibility = 0
 
 # Shop Variables
@@ -92,10 +92,10 @@ def gen_random(structure):
 def display_hp(enemies_killed):
     global current_room_number
     score_surface = crimson_medium.render(f'Health: {hp}',True,white)
-    score_rectangle = score_surface.get_rect(topleft=(50,0))
+    score_rectangle = score_surface.get_rect(topleft=(0,0))
     screen.blit(score_surface,score_rectangle)
     score1_surface = crimson_medium.render('Enemies Killed: '+str(enemies_killed),True,white)
-    score1_rectangle = score1_surface.get_rect(topleft=(200,0))
+    score1_rectangle = score1_surface.get_rect(topleft=(150,0))
     room_number_surf = crimson_medium.render(f'Room {current_room_number}', True, light_blue)
     room_number_rect = room_number_surf.get_rect(center=(500, 150))
     screen.blit(room_number_surf, room_number_rect)
@@ -121,12 +121,18 @@ def check_if_collision_bullet(room_list,room_number,red_bullets):
                     if obstacle.colliderect(bullet[0]):
                          red_bullets.remove(bullet)
 
+def check_if_collision_bullet_player(player_rect,enemy_bullets):
+    for bullet in enemy_bullets:
+        if player_rect.colliderect(bullet[0]):
+            enemy_bullets.remove(bullet)
+            return True
+
 
 def check_if_collision_bullet_enemy(enemy_rect,red_bullets,spawn_timer):
     for bullet in red_bullets:
         if enemy_rect.colliderect(bullet[0]):
             red_bullets.remove(bullet)
-            spawn_timer=True
+            spawn_timer = True
             return True
 
 
@@ -145,6 +151,15 @@ def handle_bullets(red_bullets):
         bullet[0].x+=int(math.cos(angle)*bullet_velocity)
         if bullet[0].x>1000 or bullet[0].x<0 or bullet[0].y>600 or bullet[0].y<0:
             red_bullets.remove(bullet)
+
+
+def handle_bullets_enemy(enemy_bullets):
+    for bullet in enemy_bullets:
+        angle = bullet[1]
+        bullet[0].y-=int(math.sin(angle)*bullet_velocity)
+        bullet[0].x-=int(math.cos(angle)*bullet_velocity)
+        if bullet[0].x>1000 or bullet[0].x<0 or bullet[0].y>600 or bullet[0].y<0:
+            enemy_bullets.remove(bullet)
 
 
 # Enemy
@@ -166,6 +181,16 @@ def move_towards_player(enemy, player, diff):
     enemy.y += dy * fly_speed
 
 
+# def move_towards_player_b(enemy, player):
+#     dx, dy = player.x - enemy.x, player.y - enemy.y
+#     dist = math.hypot(dx, dy)
+#     if dist <= 40:
+#         return True
+#     dx, dy = dx / dist, dy / dist
+#     enemy.x += dx * 1.2
+#     enemy.y += dy * 1.2
+
+
 # Colors
 white = (255, 255, 255)
 light_blue = (173, 216, 230)
@@ -180,7 +205,7 @@ max_bullets=100
 bullet_velocity=7
 main_menu = pygame.image.load('graphics/main_bg.jpg')
 main_menu_rect = main_menu.get_rect(topleft=(0, 0))
-game_bg = pygame.image.load('graphics/game_bg1.jpg')
+game_bg = pygame.image.load('graphics/DARKER bg .png')
 game_bg_rect = game_bg.get_rect(topleft=(0, 0))
 ground_bg = pygame.image.load('graphics/ground_bg.jpg')
 ground_bg_rect = ground_bg.get_rect(topleft=(0, 550))
@@ -193,7 +218,7 @@ play_button_rect = play_button_surf.get_rect(center=(500, 200))
 settings_button_surf = crimson_medium.render('Settings', True, white)
 settings_button_rect = settings_button_surf.get_rect(center=(500, 250))
 back_button_surf = crimson_medium.render('Back', True, white)
-back_button_rect = back_button_surf.get_rect(bottomleft=(50, 60))
+back_button_rect = back_button_surf.get_rect(bottomleft=(0, 60))
 shop_button_surf = crimson_medium.render('Shop', True, white)
 shop_button_rect = shop_button_surf.get_rect(center=(500, 300))
 tutorial_button_surf = crimson_medium.render('Tutorial', True, white)
@@ -201,38 +226,53 @@ tutorial_button_rect = tutorial_button_surf.get_rect(center=(500,350))
 quit_button_surf = crimson_medium.render('Quit', True, white)
 quit_button_rect = quit_button_surf.get_rect(center=(500, 400))
 
-tutorial_txt1 = crimson_medium.render('Welcome to Purgatory. Move with the left and right arrows.',True,white)
+tutorial_txt1 = crimson_medium.render('Welcome to Purgatory. Move with a and d.',True,white)
 tutorial_txt1_rect = tutorial_txt1.get_rect(center=(500,200))
-tutorial_txt2 = crimson_medium.render('Press space to jump.',True,white)
+tutorial_txt2 = crimson_medium.render('Press w to jump.',True,white)
 tutorial_txt2_rect = tutorial_txt1.get_rect(center=(500,250))
-tutorial_txt3 = crimson_medium.render('Wall-hold with the arrows when you are next to a wall.',True,white)
+tutorial_txt3 = crimson_medium.render('Shoot your spirit gun with space.',True,white)
 tutorial_txt3_rect = tutorial_txt1.get_rect(center=(500,300))
 tutorial_txt4 = crimson_medium.render('As you progress and reach checkpoint rooms, shop upgrades unlock.',True,white)
 tutorial_txt4_rect = tutorial_txt1.get_rect(center=(500,350))
 tutorial_txt5 = crimson_medium.render('Mind your health. Strange spirits lurk here...',True,white)
 tutorial_txt5_rect = tutorial_txt1.get_rect(center=(500,400))
 
-player_surf = pygame.image.load('graphics/player/player.png')
+player_surf = pygame.image.load('graphics/player/player.png').convert_alpha()
 player_rect = player_surf.get_rect(bottomleft=(0, 550))
-enemy_surf = pygame.image.load('graphics/enemies/melee_enemy.png')
+player_rect=player_rect.inflate(-3,-3)
+enemy_surf = pygame.image.load('graphics/enemies/melee_enemy.png').convert_alpha()
 enemy_center = (randint(0, 1000), 200)
 enemy_rect = enemy_surf.get_rect(center=enemy_center)
+enemy_r_surf = pygame.image.load('graphics/enemies/ranged_enemy.png').convert_alpha()
+enemy_r_center = (randint(1,3)*250, 250)
+enemy_r_rect = enemy_r_surf.get_rect(center=enemy_r_center)
 
-gun_surf = pygame.image.load('graphics/player/ship_nobg.png')
+gun_surf = pygame.image.load('graphics/player/ship_nobg.png').convert_alpha()
 gun_rect = gun_surf.get_rect(bottomleft=(0, 550))
 gun_surf = pygame.transform.scale(gun_surf, (50, 10))
 
-box_surf = pygame.image.load('graphics/enemies/box.jpg')
+blast_surf = pygame.image.load('graphics/enemies/spirit_nobg.png').convert_alpha()
+blast_surf = pygame.transform.scale(blast_surf, (25,25))
+blast_center = enemy_r_center
+blast_rect = blast_surf.get_rect(center=enemy_r_center)
+
+
+box_surf = pygame.image.load('graphics/enemies/box.jpg').convert_alpha()
 box_rect = box_surf.get_rect()
 checkpoint_surf = crimson.render('Checkpoint Room', True, light_blue)
 checkpoint_rect = checkpoint_surf.get_rect(center=(500, 100))
 red_bullets = []
+enemy_bullets = []
 
 pygame.display.set_icon(enemy_surf)
 now_move = False
 spawn_timer = True
+ranged_death = False
+spawn_r_timer = pygame.USEREVENT + 1
+pygame.time.set_timer(spawn_r_timer,6000)
 enemies_killed = 0
 new_image=pygame.transform.flip(player_surf,True,False)
+
 while True:
     # if isjump == False:
     #     if keys_pressed[pygame.K_SPACE] and player_rect.bottom>=550:
@@ -248,39 +288,55 @@ while True:
     #         v = 5
     #         m = 1
     # print(isjump,player_rect.bottom)
+    print(player_rect)
     gun_rect.x = player_rect.x
     gun_rect.y = player_rect.y
     gun_rect.width = 30
     gun_rect.height = 20
     mouse_x, mouse_y = pygame.mouse.get_pos()
-    rel_x, rel_y=mouse_x-player_rect.x,mouse_y-player_rect.y
-    angle=(180/math.pi)*-math.atan2(rel_y,rel_x)
-    angle1=(math.atan2(rel_y,rel_x))
-    z,n=rot_center(gun_surf,angle,player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2)
-    
-    if spawn_timer==True and type(screen_type) == int:
-        enemy_surf = pygame.image.load('graphics/enemies/melee_enemy.png')
+    rel_x, rel_y = mouse_x-player_rect.x,mouse_y-player_rect.y
+    rel_x_e, rel_y_e = enemy_r_rect.x - player_rect.x,enemy_r_rect.y - player_rect.y
+    angle = (180/math.pi)*-math.atan2(rel_y,rel_x)
+    angle_e = (180 / math.pi) * -math.atan2(rel_y_e, rel_x_e)
+    angle1 = (math.atan2(rel_y,rel_x))
+    angle1_e = (math.atan2(rel_y_e, rel_x_e))
+    z,n = rot_center(gun_surf,angle,player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2)
+    if spawn_timer == True and type(screen_type) == int:
+        enemy_surf = pygame.image.load('graphics/enemies/melee_enemy.png').convert_alpha()
         enemy_center = (randint(0, 1000), -100)
         enemy_rect = enemy_surf.get_rect(center=enemy_center)
-        spawn_timer=False
+        spawn_timer = False
+    if ranged_death == True and type(screen_type) == int:
+        enemy_r_surf = pygame.image.load('graphics/enemies/ranged_enemy.png').convert_alpha()
+        enemy_r_center = (1200,800)
+        enemy_r_rect = enemy_r_surf.get_rect(center=enemy_r_center)
+        ranged_death = False
     for event in pygame.event.get():
         keys_pressed = pygame.key.get_pressed()
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+        if event.type == spawn_r_timer and type(screen_type) == int:
+            bullet = [pygame.Rect(enemy_r_rect.x + enemy_r_rect.width / 2,
+                                  enemy_r_rect.y + enemy_r_rect.height / 2, 10, 5), angle1_e]
+            enemy_bullets.append(bullet)
+            enemy_r_surf = pygame.image.load('graphics/enemies/ranged_enemy.png').convert_alpha()
+            enemy_r_center = (randint(1,3)*250, 250)
+            enemy_r_rect = enemy_r_surf.get_rect(center=enemy_r_center)
         if event.type == pygame.KEYDOWN:
-            if keys_pressed[pygame.K_SPACE]:
+            if keys_pressed[pygame.K_w]:
                 now_move = True
                 if player_rect.bottom == 550 or player_rect.bottom == 501 or player_rect.bottom == 451 \
                         or player_rect.bottom == 401:
                     player_gravity = -20
-            if keys_pressed[pygame.K_LEFT]:
+            if keys_pressed[pygame.K_a]:
                 player_speed = -4 - add_speed
-                new_image=player_surf
-                
-            if keys_pressed[pygame.K_RIGHT]:
+                new_image=pygame.transform.flip(player_surf,True,False)
+                player_surf=new_image
+            if keys_pressed[pygame.K_d]:
                 player_speed = 4 + add_speed
                 new_image=pygame.transform.flip(player_surf,True,False)
+                player_surf=new_image
             if keys_pressed[pygame.K_BACKSLASH]:
                 print('Developer tools enabled.')
                 dev_tools = True
@@ -294,15 +350,15 @@ while True:
             if keys_pressed[pygame.K_s] and dev_tools:
                 max_room = 25
                 print('All shop upgrades unlocked.')
-            if keys_pressed[pygame.K_d] and dev_tools:
+            if keys_pressed[pygame.K_k] and dev_tools:
                 dead = True
                 print('Killed player.')
-            if event.key==pygame.K_e and len(red_bullets)<max_bullets:
+            if event.key == pygame.K_SPACE and len(red_bullets)<max_bullets:
                 bullet=[pygame.Rect(player_rect.x+player_rect.width/2,player_rect.y+player_rect.height/2,10,5), angle1]
                 red_bullets.append(bullet)
 
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT or event.key == pygame.K_RIGHTBRACKET \
+            if event.key == pygame.K_a or event.key == pygame.K_d or event.key == pygame.K_RIGHTBRACKET \
                     or event.key == pygame.K_LEFTBRACKET:
                 player_speed = 0
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -364,7 +420,7 @@ while True:
         screen.blit(tutorial_txt3, tutorial_txt3_rect)
         screen.blit(tutorial_txt4, tutorial_txt4_rect)
         screen.blit(tutorial_txt5, tutorial_txt5_rect)
-        display_hp()
+        display_hp(0)
 
         # Movement
         player_next_step = pygame.Rect(player_rect.x + player_speed, player_rect.y + player_gravity, player_rect.width,
@@ -376,17 +432,15 @@ while True:
             player_gravity += 1
             player_rect.y += player_gravity
             player_rect.x += player_speed
+            screen.blit(player_surf, player_rect)
             screen.blit(z, n)
-            screen.blit(new_image, player_rect)
-
             if player_rect.bottom >= 550:
                 player_rect.bottom = 550
                 player_gravity = 0
         else:
             player_gravity = -1
+            screen.blit(player_surf, player_rect)
             screen.blit(z, n)
-            screen.blit(new_image, player_rect)
-
 
         # Room
         if player_rect.x > 1050:
@@ -421,17 +475,15 @@ while True:
             player_gravity += 1
             player_rect.y += player_gravity
             player_rect.x += player_speed
+            screen.blit(player_surf, player_rect)
             screen.blit(z, n)
-            screen.blit(new_image, player_rect)
-
             if player_rect.bottom >= 550:
                 player_rect.bottom = 550
                 player_gravity = 0
         else:
             player_gravity = -1
+            screen.blit(player_surf, player_rect)
             screen.blit(z, n)
-            screen.blit(new_image, player_rect)
-
         # Exit Detection
         if player_rect.x > 1050:
             if len(room_list) == screen_type + 1:
@@ -457,12 +509,21 @@ while True:
         invincibility -= 1
         if move_towards_player(enemy_rect, player_rect, difficulty) and invincibility <= 0:
             hp -= 10
-            spawn_timer=True
+            spawn_timer = True
+        # if move_towards_player_b(blast_rect, player_rect) and invincibility <= 0:
+        #     hp -= 5
+
         if check_if_collision_bullet_enemy(enemy_rect,red_bullets,spawn_timer):
-            spawn_timer=True
-            enemies_killed+=1
-            
+            spawn_timer = True
+            enemies_killed += 1
+        if check_if_collision_bullet_enemy(enemy_r_rect,red_bullets,spawn_timer):
+            ranged_death = True
+            enemies_killed += 1
+        if check_if_collision_bullet_player(player_rect,enemy_bullets):
+            hp-=10
         screen.blit(enemy_surf, enemy_rect)
+        screen.blit(enemy_r_surf, enemy_r_rect)
+
         if hp <= 0:
             dead = True
             enemy_center = (1000,-100)
@@ -470,6 +531,7 @@ while True:
             invincibility = 120
 
         display_hp(enemies_killed)
+        
 
     elif screen_type == 'settings':
         if main_menu_rect.x > -111 and back_counter % 111 == 0:
@@ -503,7 +565,7 @@ while True:
                 screen.blit(lv_25_surf, lv_25_rect)
                 if lv_25_rect.collidepoint(pygame.mouse.get_pos()):
                     lv_25_upgrade = True
-                    max_hp += 100
+                    max_hp += 10
             else:
                 lv_25_surf = crimson_medium.render('Increase Lives III (Claimed)', True, light_blue)
                 lv_25_rect = lv_25_surf.get_rect(center=(500, 400))
@@ -535,7 +597,7 @@ while True:
                 screen.blit(lv_15_surf, lv_15_rect)
                 if lv_15_rect.collidepoint(pygame.mouse.get_pos()):
                     lv_15_upgrade = True
-                    max_hp += 100
+                    max_hp += 10
             else:
                 lv_15_surf = crimson_medium.render('Increase Lives II (Claimed)', True, light_blue)
                 lv_15_rect = lv_15_surf.get_rect(center=(500, 300))
@@ -567,7 +629,7 @@ while True:
                 screen.blit(lv_5_surf, lv_5_rect)
                 if lv_5_rect.collidepoint(pygame.mouse.get_pos()):
                     lv_5_upgrade = True
-                    max_hp += 100
+                    max_hp += 10
             else:
                 lv_5_surf = crimson_medium.render('Increase Lives (Claimed)', True, light_blue)
                 lv_5_rect = lv_5_surf.get_rect(center=(500, 200))
@@ -578,9 +640,12 @@ while True:
             screen.blit(lv_5_surf, lv_5_rect)
     for bullet in red_bullets:
         pygame.draw.rect(screen,(255,255,255),bullet[0])
+    for bullet in enemy_bullets:
+        pygame.draw.rect(screen,light_blue,bullet[0])
     check_if_collision_bullet(room_list,current_room_number,red_bullets)
 
     handle_bullets(red_bullets)
+    handle_bullets_enemy(enemy_bullets)
     pygame.display.update()
     clock.tick(60)
 
